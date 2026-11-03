@@ -1,11 +1,16 @@
 package cz.upce.fei.nnptp.taskpulse.cli;
 
+import cz.upce.fei.nnptp.taskpulse.domain.Priority;
+import cz.upce.fei.nnptp.taskpulse.domain.Task;
+import cz.upce.fei.nnptp.taskpulse.domain.TaskState;
 import cz.upce.fei.nnptp.taskpulse.service.ProjectService;
 import cz.upce.fei.nnptp.taskpulse.service.TaskService;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryProjectRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -41,7 +46,8 @@ class TaskPulseCliTest {
     void helpCommandDisplaysAvailableCommands() {
         boolean continueRunning = cli.executeLine("help");
         assertThat(continueRunning).isTrue();
-        assertThat(outContent.toString()).contains("Available commands:", "project add", "task add", "worklog log");
+        assertThat(outContent.toString()).contains("Available commands:", "project add", "task add", "worklog log",
+                "--exceeded [<minutes>]");
     }
 
     @Test
@@ -102,5 +108,50 @@ class TaskPulseCliTest {
         Scanner scanner = new Scanner("help\nexit\n");
         cli.runInteractive(scanner);
         assertThat(outContent.toString()).contains("TaskPulse CLI", "Available commands:");
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "60, 60 min, -15 min",
+            "0, 0 min, 45 min",
+            "none, not estimated, unavailable"
+    }, nullValues = "none")
+    void taskShowReportsEstimateActualAndVariance(Integer estimate, String expectedEstimate, String expectedVariance) {
+        Task task = taskWith45RecordedMinutes(estimate);
+        cli.executeLine("task show " + task.getId());
+        assertThat(outContent.toString()).contains("Estimate:    " + expectedEstimate, "2 (45 min recorded)",
+                "Variance:    " + expectedVariance);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "'', Review",
+            "--exceeded --priority HIGH, Review | 15 min over estimate",
+            "--exceeded 14, Review | 15 min over estimate",
+            "--exceeded 15, No tasks found.",
+            "--priority LOW --exceeded, No tasks found."
+    })
+    void taskListShowsOnlyMatchingVarianceAlerts(String options, String expectedOutput) {
+        taskWith45RecordedMinutes(30);
+        cli.executeLine("task list " + options);
+        assertThat(outContent.toString().stripTrailing()).endsWith(expectedOutput);
+        assertThat(errContent.toString()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"-1, non-negative", "later, whole number", "9223372036854775808, whole number"})
+    void taskListRejectsInvalidVarianceThreshold(String input, String expectedError) {
+        cli.executeLine("task list --exceeded " + input);
+        assertThat(errContent.toString()).contains(expectedError);
+        assertThat(outContent.toString()).isEmpty();
+    }
+
+    private Task taskWith45RecordedMinutes(Integer estimate) {
+        var project = projectService.createProject("Planning", "");
+        Task task = taskService.createTask(project.getId(), "Review", "", Priority.HIGH, estimate, null);
+        taskService.transitionTask(task.getId(), TaskState.IN_PROGRESS);
+        taskService.logWork(task.getId(), 20, "Dev", "");
+        taskService.logWork(task.getId(), 25, "Dev", "");
+        return task;
     }
 }
