@@ -91,7 +91,8 @@ public class TaskPulseCli {
         out.println("  project edit <project-id> <name> [description]");
         out.println("  project delete <project-id>");
         out.println("  task add <project-id> <title> [description]");
-        out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>] [--search <text>] [--sort <title|priority|duedate|priority-duedate>]");
+        out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>]"
+                + " [--search <text>] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]");
         out.println("  task show <task-id>");
         out.println("  task transition <task-id> <state>");
         out.println("  task label add <task-id> <label>");
@@ -198,16 +199,25 @@ public class TaskPulseCli {
                         qb.label(args.get(++i));
                     } else if ("--search".equalsIgnoreCase(flag) && i + 1 < args.size()) {
                         qb.textSearch(args.get(++i));
+                    } else if ("--exceeded".equalsIgnoreCase(flag)) {
+                        long threshold = 0;
+                        if (i + 1 < args.size() && !args.get(i + 1).startsWith("--")) {
+                            threshold = parseVarianceThreshold(args.get(++i));
+                        }
+                        qb.varianceThresholdMinutes(threshold);
                     } else if ("--sort".equalsIgnoreCase(flag) && i + 1 < args.size()) {
                         qb.sortOrder(parseSortOrder(args.get(++i)));
                     }
                 }
-                List<Task> tasks = taskService.findTasks(qb.build());
+                TaskQuery query = qb.build();
+                List<Task> tasks = taskService.findTasks(query);
                 if (tasks.isEmpty()) {
                     out.println("No tasks found.");
                 } else {
                     for (Task t : tasks) {
-                        out.println(t.getId() + " | " + t.getState() + " | " + t.getPriority() + " | " + t.getTitle());
+                        String alert = query.varianceThresholdMinutes() == null ? ""
+                                : " | " + t.getVarianceMinutes() + " min over estimate";
+                        out.println(t.getId() + " | " + t.getState() + " | " + t.getPriority() + " | " + t.getTitle() + alert);
                     }
                 }
             }
@@ -228,6 +238,8 @@ public class TaskPulseCli {
                 out.println("Due date:    " + (t.getDueDate() == null ? "none" : t.getDueDate()));
                 out.println("Labels:      " + (t.getLabels().isEmpty() ? "none" : String.join(", ", t.getLabels())));
                 out.println("Worklogs:    " + t.getWorklogs().size() + " (" + t.getTotalRecordedMinutes() + " min recorded)");
+                Long variance = t.getVarianceMinutes();
+                out.println("Variance:    " + (variance == null ? "unavailable" : variance + " min"));
             }
             case "transition" -> {
                 if (args.size() < 3) {
@@ -323,6 +335,14 @@ public class TaskPulseCli {
                 }
             }
             default -> err.println("Unknown worklog action: '" + action + "'");
+        }
+    }
+
+    private long parseVarianceThreshold(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("--exceeded expects a whole number of minutes, got '" + value + "'");
         }
     }
 

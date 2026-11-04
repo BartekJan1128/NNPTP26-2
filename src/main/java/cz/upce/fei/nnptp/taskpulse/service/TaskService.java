@@ -155,6 +155,12 @@ public class TaskService {
                 return false;
             }
         }
+        if (query.varianceThresholdMinutes() != null) {
+            Long variance = task.getVarianceMinutes();
+            if (variance == null || variance <= query.varianceThresholdMinutes()) {
+                return false;
+            }
+        }
         return true;
     }
 
