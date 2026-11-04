@@ -37,10 +37,6 @@ This document outlines proposed changes to evolve the TaskPulse codebase across 
   - Create a `TaskState` interface or abstract base class with state implementations (`TodoState`, `InProgressState`, `BlockedState`, `DoneState`).
   - Each state encapsulates transition permissions and action constraints (such as disallowing worklogs unless in `InProgressState`).
 
-- **Builder Pattern (Domain Layer)**:
-  - Implement `TaskBuilder` for fluent and readable creation of `Task` instances with multiple optional fields (estimates, due dates, labels, worklogs).
-  - Simplifies test fixtures and CSV deserialization pipelines.
-
 - **Specification Pattern (Query & Filtering)**:
   - Create composable specifications (`TaskSpecification`) with implementations such as `ProjectIdSpecification`, `StateSpecification`, `OverdueSpecification`, and `TextSearchSpecification`.
   - Support chaining with `and()`, `or()`, and `not()`.
