@@ -92,7 +92,7 @@ public class TaskPulseCli {
         out.println("  project delete <project-id>");
         out.println("  task add <project-id> <title> [description]");
         out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>]"
-                + " [--search <text>] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]");
+                + " [--search <text>] [--overdue] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]");
         out.println("  task show <task-id>");
         out.println("  task transition <task-id> <state>");
         out.println("  task label add <task-id> <label>");
@@ -199,6 +199,8 @@ public class TaskPulseCli {
                         qb.label(args.get(++i));
                     } else if ("--search".equalsIgnoreCase(flag) && i + 1 < args.size()) {
                         qb.textSearch(args.get(++i));
+                    } else if ("--overdue".equalsIgnoreCase(flag)) {
+                        qb.overdue(true);
                     } else if ("--exceeded".equalsIgnoreCase(flag)) {
                         long threshold = 0;
                         if (i + 1 < args.size() && !args.get(i + 1).startsWith("--")) {
