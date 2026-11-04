@@ -18,7 +18,6 @@ This backlog categorizes candidate student tasks across defects, refactoring, ne
 - **FEAT-01**: Implement FR-08 Markdown project summary exporter.
 - **FEAT-02**: Implement FR-08 JSON project summary exporter.
 - **FEAT-03**: Support `--format` flag in CLI report commands (`report export <project-id> --format <markdown|json>`).
-- **FEAT-05**: Estimate vs. actual progress reporting and variance threshold alerts.
 
 ## Tests
 - **TEST-01**: Add property-based / randomized tests for CSV escaping and round-trip preservation.
