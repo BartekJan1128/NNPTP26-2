@@ -1,6 +1,5 @@
 package cz.upce.fei.nnptp.taskpulse.domain;
 
-import cz.upce.fei.nnptp.taskpulse.domain.exception.TaskTransitionException;
 import cz.upce.fei.nnptp.taskpulse.domain.exception.ValidationException;
 
 import java.time.LocalDate;
@@ -156,22 +155,7 @@ public class Task {
     }
 
     public void transitionTo(TaskState nextState) {
-        Objects.requireNonNull(nextState, "Next state must not be null");
-        if (this.state == nextState) {
-            throw new TaskTransitionException("Task is already in state " + state);
-        }
-        boolean allowed = switch (this.state) {
-            case TODO -> nextState == TaskState.IN_PROGRESS;
-            case IN_PROGRESS -> nextState == TaskState.BLOCKED || (nextState == TaskState.DONE && !worklogs.isEmpty());
-            case BLOCKED -> nextState == TaskState.IN_PROGRESS;
-            case DONE -> nextState == TaskState.TODO;
-        };
-        if (!allowed) {
-            if (this.state == TaskState.IN_PROGRESS && nextState == TaskState.DONE && worklogs.isEmpty()) {
-                throw new TaskTransitionException("Cannot complete task in IN_PROGRESS state without any worklogs");
-            }
-            throw new TaskTransitionException("Invalid state transition from " + this.state + " to " + nextState);
-        }
+        state.validateTransitionTo(nextState, !worklogs.isEmpty());
         this.state = nextState;
     }
 
