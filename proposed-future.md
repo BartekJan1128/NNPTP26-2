@@ -56,9 +56,6 @@ This document outlines proposed changes to evolve the TaskPulse codebase across 
 
 ## 3. Bug Fixes & Edge Case Handling
 
-- **Unclosed Quotes in CSV Parser**:
-  - `CsvUtils.parse` currently finishes parsing without error if an unclosed double quote is encountered at EOF. It should detect the unclosed quote state and throw a descriptive `StorageException`.
-
 - **Malformed Timestamp and Number Handling in CSV Deserialization**:
   - In `CsvStorageManager`, wrap `LocalDateTime.parse`, `LocalDate.parse`, and `Long.parseLong` calls with specific exception catching to report the exact line number, column, and invalid token.
 
