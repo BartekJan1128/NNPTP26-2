@@ -52,9 +52,6 @@ This document outlines proposed changes to evolve the TaskPulse codebase across 
 
 ## 3. Bug Fixes & Edge Case Handling
 
-- **Malformed Timestamp and Number Handling in CSV Deserialization**:
-  - In `CsvStorageManager`, wrap `LocalDateTime.parse`, `LocalDate.parse`, and `Long.parseLong` calls with specific exception catching to report the exact line number, column, and invalid token.
-
 - **Strict Validation on Task Updates**:
   - Ensure `TaskService.updateTask` validates against negative estimates and blank titles consistently when updating existing tasks.
 
