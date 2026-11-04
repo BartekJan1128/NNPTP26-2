@@ -10,6 +10,8 @@ import cz.upce.fei.nnptp.taskpulse.storage.InMemoryProjectRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -136,5 +138,28 @@ class TaskServiceTest {
         assertThatThrownBy(() -> TaskQuery.builder().dueDateRange(fromDate, toDate).build())
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Invalid date range");
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "none, 45, 0, false",
+            "0, 0, 0, false",
+            "0, 1, 0, true",
+            "60, 45, 0, false",
+            "60, 60, 0, false",
+            "60, 75, 15, false",
+            "60, 76, 15, true",
+            "1, 2147483650, 2147483648, true"
+    }, nullValues = "none")
+    void filtersByVarianceAboveThreshold(Integer estimate, long recorded, long threshold, boolean expectedMatch) {
+        UUID projectId = projectService.createProject("Planning", "").getId();
+        Task task = taskService.createTask(projectId, "Review", "", Priority.MEDIUM, estimate, null);
+        if (recorded > 0) {
+            taskService.transitionTask(task.getId(), TaskState.IN_PROGRESS);
+            taskService.logWork(task.getId(), recorded, "Dev", "");
+        }
+
+        TaskQuery query = TaskQuery.builder().varianceThresholdMinutes(threshold).build();
+        assertThat(taskService.findTasks(query)).isEqualTo(expectedMatch ? List.of(task) : List.of());
     }
 }

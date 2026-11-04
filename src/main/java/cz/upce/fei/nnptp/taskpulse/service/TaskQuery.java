@@ -17,11 +17,15 @@ public record TaskQuery(
         LocalDate fromDueDate,
         LocalDate toDueDate,
         Boolean overdue,
-        TaskSortOrder sortOrder
+        TaskSortOrder sortOrder,
+        Long varianceThresholdMinutes
 ) {
     public TaskQuery {
         if (fromDueDate != null && toDueDate != null && fromDueDate.isAfter(toDueDate)) {
             throw new ValidationException("Invalid date range: fromDate (" + fromDueDate + ") is after toDate (" + toDueDate + ")");
+        }
+        if (varianceThresholdMinutes != null && varianceThresholdMinutes < 0) {
+            throw new ValidationException("Variance threshold must be a non-negative number of minutes");
         }
         if (label != null && !label.isBlank()) {
             label = Label.normalize(label);
@@ -30,6 +34,11 @@ public record TaskQuery(
         }
         textSearch = (textSearch != null && !textSearch.isBlank()) ? textSearch.strip().toLowerCase() : null;
         sortOrder = sortOrder == null ? TaskSortOrder.TITLE_ASC : sortOrder;
+    }
+
+    public TaskQuery(UUID projectId, TaskState state, Priority priority, String label, String textSearch,
+                     LocalDate fromDueDate, LocalDate toDueDate, Boolean overdue, TaskSortOrder sortOrder) {
+        this(projectId, state, priority, label, textSearch, fromDueDate, toDueDate, overdue, sortOrder, null);
     }
 
     public static Builder builder() {
@@ -46,6 +55,7 @@ public record TaskQuery(
         private LocalDate toDueDate;
         private Boolean overdue;
         private TaskSortOrder sortOrder = TaskSortOrder.TITLE_ASC;
+        private Long varianceThresholdMinutes;
 
         public Builder projectId(UUID projectId) {
             this.projectId = projectId;
@@ -88,8 +98,14 @@ public record TaskQuery(
             return this;
         }
 
+        public Builder varianceThresholdMinutes(long minutes) {
+            this.varianceThresholdMinutes = minutes;
+            return this;
+        }
+
         public TaskQuery build() {
-            return new TaskQuery(projectId, state, priority, label, textSearch, fromDueDate, toDueDate, overdue, sortOrder);
+            return new TaskQuery(projectId, state, priority, label, textSearch, fromDueDate, toDueDate,
+                    overdue, sortOrder, varianceThresholdMinutes);
         }
     }
 }
