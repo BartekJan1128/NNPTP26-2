@@ -9,6 +9,7 @@ import cz.upce.fei.nnptp.taskpulse.domain.exception.TaskPulseException;
 import cz.upce.fei.nnptp.taskpulse.service.ProjectService;
 import cz.upce.fei.nnptp.taskpulse.service.TaskQuery;
 import cz.upce.fei.nnptp.taskpulse.service.TaskService;
+import cz.upce.fei.nnptp.taskpulse.service.TaskSortOrder;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -90,7 +91,7 @@ public class TaskPulseCli {
         out.println("  project edit <project-id> <name> [description]");
         out.println("  project delete <project-id>");
         out.println("  task add <project-id> <title> [description]");
-        out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>] [--search <text>]");
+        out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>] [--search <text>] [--sort <title|priority|duedate|priority-duedate>]");
         out.println("  task show <task-id>");
         out.println("  task transition <task-id> <state>");
         out.println("  task label add <task-id> <label>");
@@ -197,6 +198,8 @@ public class TaskPulseCli {
                         qb.label(args.get(++i));
                     } else if ("--search".equalsIgnoreCase(flag) && i + 1 < args.size()) {
                         qb.textSearch(args.get(++i));
+                    } else if ("--sort".equalsIgnoreCase(flag) && i + 1 < args.size()) {
+                        qb.sortOrder(parseSortOrder(args.get(++i)));
                     }
                 }
                 List<Task> tasks = taskService.findTasks(qb.build());
@@ -345,5 +348,15 @@ public class TaskPulseCli {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid priority: '" + val + "'. Allowed: " + Arrays.toString(Priority.values()));
         }
+    }
+
+    private TaskSortOrder parseSortOrder(String val) {
+        return switch (val.strip().toLowerCase()) {
+            case "title" -> TaskSortOrder.TITLE_ASC;
+            case "priority" -> TaskSortOrder.PRIORITY_DESC;
+            case "duedate" -> TaskSortOrder.DUE_DATE_ASC;
+            case "priority-duedate" -> TaskSortOrder.PRIORITY_DESC_THEN_DUE_DATE_ASC;
+            default -> throw new IllegalArgumentException("Invalid sort order: '" + val + "'. Allowed: [title, priority, duedate, priority-duedate]");
+        };
     }
 }
