@@ -5,7 +5,7 @@ This backlog categorizes candidate student tasks across defects, refactoring, ne
 ## Defects (Bug Fixes)
 - **BUG-01**: Rejection of empty label list edge cases when deserializing CSV.
 - **BUG-02**: Enforce strict validation on task estimate changes preventing negative values across all update paths.
-- **BUG-03**: Handle edge case in CSV parsing when records end with trailing empty lines or unclosed quotes with actionable exception message.
+- **BUG-03**: Handle edge case in CSV parsing when records end with trailing empty lines with actionable exception message.
 - **BUG-04**: Prevent updating tasks to reference nonexistent project IDs if a project update endpoint/method is added.
 
 ## Refactoring & Design Improvements
