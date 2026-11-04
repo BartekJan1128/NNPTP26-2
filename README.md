@@ -4,7 +4,6 @@
 
 # See also
 
-* [BACKLOG](backlog.md)
+* [BACKLOG](BACKLOG.md)
 * [CONTRIBUTING](CONTRIBUTING.md)
 * [PRD](PRD.md)
-* [proposed-future](proposed-future.md)
