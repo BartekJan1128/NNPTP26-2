@@ -1,5 +1,7 @@
 package cz.upce.fei.nnptp.taskpulse.storage.csv;
 
+import cz.upce.fei.nnptp.taskpulse.storage.StorageException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -75,6 +77,10 @@ public final class CsvUtils {
                 }
             }
             prev = current;
+        }
+        
+        if (inQuotes) {
+            throw new StorageException("Invalid CSV: unclosed double quote at end of file");
         }
 
         if (currentField.length() > 0 || !currentRow.isEmpty()) {

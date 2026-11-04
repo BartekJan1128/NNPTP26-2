@@ -37,10 +37,6 @@ This document outlines proposed changes to evolve the TaskPulse codebase across 
   - Create a `TaskState` interface or abstract base class with state implementations (`TodoState`, `InProgressState`, `BlockedState`, `DoneState`).
   - Each state encapsulates transition permissions and action constraints (such as disallowing worklogs unless in `InProgressState`).
 
-- **Builder Pattern (Domain Layer)**:
-  - Implement `TaskBuilder` for fluent and readable creation of `Task` instances with multiple optional fields (estimates, due dates, labels, worklogs).
-  - Simplifies test fixtures and CSV deserialization pipelines.
-
 - **Specification Pattern (Query & Filtering)**:
   - Create composable specifications (`TaskSpecification`) with implementations such as `ProjectIdSpecification`, `StateSpecification`, `OverdueSpecification`, and `TextSearchSpecification`.
   - Support chaining with `and()`, `or()`, and `not()`.
@@ -55,12 +51,6 @@ This document outlines proposed changes to evolve the TaskPulse codebase across 
 ---
 
 ## 3. Bug Fixes & Edge Case Handling
-
-- **Unclosed Quotes in CSV Parser**:
-  - `CsvUtils.parse` currently finishes parsing without error if an unclosed double quote is encountered at EOF. It should detect the unclosed quote state and throw a descriptive `StorageException`.
-
-- **Malformed Timestamp and Number Handling in CSV Deserialization**:
-  - In `CsvStorageManager`, wrap `LocalDateTime.parse`, `LocalDate.parse`, and `Long.parseLong` calls with specific exception catching to report the exact line number, column, and invalid token.
 
 - **Strict Validation on Task Updates**:
   - Ensure `TaskService.updateTask` validates against negative estimates and blank titles consistently when updating existing tasks.

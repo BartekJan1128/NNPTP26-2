@@ -1,10 +1,6 @@
 package cz.upce.fei.nnptp.taskpulse.storage.csv;
 
-import cz.upce.fei.nnptp.taskpulse.domain.Priority;
-import cz.upce.fei.nnptp.taskpulse.domain.Project;
-import cz.upce.fei.nnptp.taskpulse.domain.Task;
-import cz.upce.fei.nnptp.taskpulse.domain.TaskState;
-import cz.upce.fei.nnptp.taskpulse.domain.Worklog;
+import cz.upce.fei.nnptp.taskpulse.domain.*;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryProjectRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryTaskRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.ProjectRepository;
@@ -19,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,6 +34,20 @@ public class CsvStorageManager {
     }
 
     public record LoadedWorkspace(ProjectRepository projectRepository, TaskRepository taskRepository) {}
+
+    @FunctionalInterface
+    private interface FieldParser<T> {
+        T parse(String raw);
+    }
+
+    private <T> T parseField(String file, String columnName, int lineNumber, String raw, FieldParser<T> parser) {
+        try {
+            return parser.parse(raw.strip());
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            throw new StorageException("Malformed value in " + file + " at line " + lineNumber
+                    + ", column '" + columnName + "': invalid token '" + raw + "'", e);
+        }
+    }
 
     public LoadedWorkspace load() {
         InMemoryProjectRepository projectRepo = new InMemoryProjectRepository();
@@ -77,7 +88,7 @@ public class CsvStorageManager {
                 if (row.size() < 3) {
                     throw new StorageException("Malformed row in projects.csv at line " + (i + 1));
                 }
-                UUID id = UUID.fromString(row.get(0).strip());
+                UUID id = parseField("projects.csv", "id", i + 1, row.get(0), UUID::fromString);
                 if (!projectIds.add(id)) {
                     throw new StorageException("Duplicate project id detected: " + id);
                 }
@@ -100,8 +111,8 @@ public class CsvStorageManager {
                 if (row.size() < 9) {
                     throw new StorageException("Malformed row in tasks.csv at line " + (i + 1));
                 }
-                UUID id = UUID.fromString(row.get(0).strip());
-                UUID projectId = UUID.fromString(row.get(1).strip());
+                UUID id = parseField("tasks.csv", "id", i + 1, row.get(0), UUID::fromString);
+                UUID projectId = parseField("tasks.csv", "projectId", i + 1, row.get(1), UUID::fromString);
                 if (!projectIds.contains(projectId)) {
                     throw new StorageException("Task references missing project: " + projectId);
                 }
@@ -110,10 +121,14 @@ public class CsvStorageManager {
                 }
                 String title = row.get(2);
                 String description = row.get(3);
-                Priority priority = Priority.valueOf(row.get(4).strip());
-                TaskState state = TaskState.valueOf(row.get(5).strip());
-                Integer estimatedMinutes = row.get(6).isBlank() ? null : Integer.valueOf(row.get(6).strip());
-                LocalDate dueDate = row.get(7).isBlank() ? null : LocalDate.parse(row.get(7).strip());
+                Priority priority = parseField("tasks.csv", "priority", i + 1, row.get(4), Priority::valueOf);
+                TaskState state = parseField("tasks.csv", "state", i + 1, row.get(5), TaskState::valueOf);
+                Integer estimatedMinutes = row.get(6).isBlank()
+                        ? null
+                        : parseField("tasks.csv", "estimatedMinutes", i + 1, row.get(6), Integer::valueOf);
+                LocalDate dueDate = row.get(7).isBlank()
+                        ? null
+                        : parseField("tasks.csv", "dueDate", i + 1, row.get(7), LocalDate::parse);
                 String rawLabels = row.get(8);
                 List<String> labels = new ArrayList<>();
                 if (!rawLabels.isBlank()) {
@@ -123,8 +138,16 @@ public class CsvStorageManager {
                             .toList();
                 }
 
-                Task task = new Task(id, projectId, title, description, priority, state,
-                        estimatedMinutes, dueDate, labels, null);
+                Task task = new TaskBuilder(projectId, title)
+                        .id(id)
+                        .description(description)
+                        .priority(priority)
+                        .state(state)
+                        .estimatedMinutes(estimatedMinutes)
+                        .dueDate(dueDate)
+                        .labels(labels)
+                        .build();
+
                 taskRepo.save(task);
                 taskMap.put(id, task);
             }
@@ -143,13 +166,13 @@ public class CsvStorageManager {
                 if (row.size() < 5) {
                     throw new StorageException("Malformed row in worklogs.csv at line " + (i + 1));
                 }
-                UUID taskId = UUID.fromString(row.get(0).strip());
+                UUID taskId = parseField("worklogs.csv", "taskId", i + 1, row.get(0), UUID::fromString);
                 Task task = taskMap.get(taskId);
                 if (task == null) {
                     throw new StorageException("Worklog references missing task: " + taskId);
                 }
-                LocalDateTime timestamp = LocalDateTime.parse(row.get(1).strip());
-                long durationMinutes = Long.parseLong(row.get(2).strip());
+                LocalDateTime timestamp = parseField("worklogs.csv", "timestamp", i + 1, row.get(1), LocalDateTime::parse);
+                long durationMinutes = parseField("worklogs.csv", "durationMinutes", i + 1, row.get(2), Long::parseLong);
                 String author = row.get(3);
                 String description = row.get(4);
                 Worklog worklog = new Worklog(timestamp, durationMinutes, author, description);
