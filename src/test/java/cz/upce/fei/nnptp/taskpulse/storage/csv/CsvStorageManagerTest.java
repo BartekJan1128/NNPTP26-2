@@ -106,4 +106,100 @@ class CsvStorageManagerTest {
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining("missing project");
     }
+
+    @Test
+    void malformedDueDateReportsLineAndColumnAndToken() throws IOException {
+        // Regression: previously only a generic 'Failed to load tasks' message
+        // was produced, without line, column, or the invalid token.
+        UUID projectId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + projectId + ",Project,\n");
+        String taskCsv = "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                UUID.randomUUID() + "," + projectId + ",Title,Desc,MEDIUM,TODO,,31-02-2026,\n";
+        Files.writeString(tempDir.resolve("tasks.csv"), taskCsv);
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("Malformed value in tasks.csv")
+                .hasMessageContaining("line 2")
+                .hasMessageContaining("column 'dueDate'")
+                .hasMessageContaining("31-02-2026");
+    }
+
+    @Test
+    void malformedEstimatedMinutesReportsLineAndColumnAndToken() throws IOException {
+        UUID projectId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + projectId + ",Project,\n");
+        String taskCsv = "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                UUID.randomUUID() + "," + projectId + ",Title,Desc,MEDIUM,TODO,abc,,\n";
+        Files.writeString(tempDir.resolve("tasks.csv"), taskCsv);
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("line 2")
+                .hasMessageContaining("column 'estimatedMinutes'")
+                .hasMessageContaining("abc");
+    }
+
+    @Test
+    void malformedTimestampInWorklogReportsLineAndColumnAndToken() throws IOException {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + projectId + ",Project,\n");
+        Files.writeString(tempDir.resolve("tasks.csv"),
+                "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                        taskId + "," + projectId + ",Title,Desc,MEDIUM,IN_PROGRESS,,,\n");
+        Files.writeString(tempDir.resolve("worklogs.csv"),
+                "taskId,timestamp,durationMinutes,author,description\n" +
+                        taskId + ",not-a-timestamp,45,Author,\n");
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("line 2")
+                .hasMessageContaining("column 'timestamp'")
+                .hasMessageContaining("not-a-timestamp");
+    }
+
+    @Test
+    void malformedDurationInWorklogReportsLineAndColumnAndToken() throws IOException {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + projectId + ",Project,\n");
+        Files.writeString(tempDir.resolve("tasks.csv"),
+                "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                        taskId + "," + projectId + ",Title,Desc,MEDIUM,IN_PROGRESS,,,\n");
+        Files.writeString(tempDir.resolve("worklogs.csv"),
+                "taskId,timestamp,durationMinutes,author,description\n" +
+                        taskId + ",2026-10-21T14:30:00,NaN,Author,\n");
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("line 2")
+                .hasMessageContaining("column 'durationMinutes'")
+                .hasMessageContaining("NaN");
+    }
+
+    @Test
+    void malformedPriorityReportsLineAndColumnAndToken() throws IOException {
+        UUID projectId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + projectId + ",Project,\n");
+        String taskCsv = "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                UUID.randomUUID() + "," + projectId + ",Title,Desc,URGENT,TODO,,,\n";
+        Files.writeString(tempDir.resolve("tasks.csv"), taskCsv);
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("line 2")
+                .hasMessageContaining("column 'priority'")
+                .hasMessageContaining("URGENT");
+    }
 }
