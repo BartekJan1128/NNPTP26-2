@@ -15,7 +15,6 @@ This backlog categorizes candidate student tasks across defects, refactoring, ne
 - **REF-04**: Decouple CSV serialization logic into dedicated entity mappers (`ProjectCsvMapper`, `TaskCsvMapper`, `WorklogCsvMapper`).
 
 ## New Features
-- **FEAT-01**: Implement FR-08 Markdown project summary exporter.
 - **FEAT-02**: Implement FR-08 JSON project summary exporter.
 - **FEAT-03**: Support `--format` flag in CLI report commands (`report export <project-id> --format <markdown|json>`).
 
