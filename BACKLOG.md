@@ -8,7 +8,7 @@ This is the single progress-tracking list for proposed fixes, refactoring, featu
 - [ ] **BUG-002 — Validate task updates**: Reject negative estimates and blank titles consistently on every task update path.
 - [ ] **BUG-003 — Report trailing empty CSV lines clearly**: Handle files ending in empty lines and provide an actionable parsing error when appropriate.
 - [ ] **BUG-004 — Validate project references on project updates**: If a project update endpoint or method is introduced, prevent tasks from referencing nonexistent project IDs.
-- [ ] **BUG-005 — Support escaped characters in quoted CLI arguments**: Teach `CommandTokenizer` to handle `\n`, `\t`, and `\\` inside quoted strings.
+- [X] **BUG-005 — Support escaped characters in quoted CLI arguments**: Teach `CommandTokenizer` to handle `\n`, `\t`, and `\\` inside quoted strings.
 - [ ] **BUG-006 — Parse CLI enum values case-insensitively**: Normalize user-supplied enum values before validation.
 
 ## Refactoring and design
