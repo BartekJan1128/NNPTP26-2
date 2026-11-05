@@ -18,7 +18,7 @@ This is the single progress-tracking list for proposed fixes, refactoring, featu
 - [ ] **REFACTOR-003 — Encapsulate task construction**: Introduce a `TaskBuilder` to simplify task creation for tests and persistence.
 - [ ] **REFACTOR-004 — Extract CSV entity mappers**: Move row-to-entity parsing and entity-to-row serialization from `CsvStorageManager` into `ProjectCsvMapper`, `TaskCsvMapper`, and `WorklogCsvMapper`; keep storage responsible for file I/O, transactional consistency, and relationship validation.
 - [ ] **REFACTOR-005 — Isolate query filtering**: Extract `TaskService.matchesQuery(...)` into a query evaluator with composable specifications, including project, state, overdue, and text-search filters; support combining specifications with `and()`, `or()`, and `not()`.
-- [ ] **REFACTOR-006 — Centralize CLI error formatting**: Unify user-facing error presentation in a dedicated handler rather than separate catch blocks in `executeLine`.
+- [X] **REFACTOR-006 — Centralize CLI error formatting**: Unify user-facing error presentation in a dedicated handler rather than separate catch blocks in `executeLine`.
 - [ ] **REFACTOR-007 — Add a workspace unit of work**: Track modified entities and commit writes to all workspace CSV files atomically, rolling back on failure.
 
 ## Features
