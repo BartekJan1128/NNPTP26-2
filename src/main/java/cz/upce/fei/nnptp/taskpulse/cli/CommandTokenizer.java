@@ -21,16 +21,38 @@ public final class CommandTokenizer {
             char c = line.charAt(i);
 
             if (inQuotes) {
-                if (c == quoteChar) {
+                if (c == '\\' && i + 1 < line.length()) {
+                    char next = line.charAt(i + 1);
+
+                    switch (next) {
+                        case 'n' -> {
+                            current.append('\n');
+                            i++;
+                        }
+                        case 't' -> {
+                            current.append('\t');
+                            i++;
+                        }
+                        case '\\' -> {
+                            current.append('\\');
+                            i++;
+                        }
+                        default -> {
+                            if (next == quoteChar) {
+                                current.append(quoteChar);
+                                i++;
+                            } else {
+                                current.append(c);
+                            }
+                        }
+                    }
+                } else if (c == quoteChar) {
                     inQuotes = false;
-                } else if (c == '\\' && i + 1 < line.length() && line.charAt(i + 1) == quoteChar) {
-                    current.append(quoteChar);
-                    i++;
                 } else {
                     current.append(c);
                 }
             } else {
-                if (c == '\"' || c == '\'') {
+                if (c == '"' || c == '\'') {
                     inQuotes = true;
                     quoteChar = c;
                 } else if (Character.isWhitespace(c)) {
