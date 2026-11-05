@@ -14,7 +14,7 @@ This is the single progress-tracking list for proposed fixes, refactoring, featu
 ## Refactoring and design
 
 - [ ] **REFACTOR-001 — Decompose CLI command handling**: Replace the monolithic `TaskPulseCli` switch with dedicated command handlers (such as `ProjectCliHandler`, `TaskCliHandler`, and `WorklogCliHandler`), a command registry, and reusable parsing for options such as `--project`, `--state`, and `--priority`.
-- [ ] **REFACTOR-002 — Encapsulate task state transitions**: Move transition permissions and state-specific constraints from enum switches into discrete transition handlers or state implementations.
+- [x] **REFACTOR-002 — Encapsulate task state transitions**: Move transition permissions and state-specific constraints from enum switches into discrete transition handlers or state implementations.
 - [ ] **REFACTOR-003 — Encapsulate task construction**: Introduce a `TaskBuilder` to simplify task creation for tests and persistence.
 - [ ] **REFACTOR-004 — Extract CSV entity mappers**: Move row-to-entity parsing and entity-to-row serialization from `CsvStorageManager` into `ProjectCsvMapper`, `TaskCsvMapper`, and `WorklogCsvMapper`; keep storage responsible for file I/O, transactional consistency, and relationship validation.
 - [ ] **REFACTOR-005 — Isolate query filtering**: Extract `TaskService.matchesQuery(...)` into a query evaluator with composable specifications, including project, state, overdue, and text-search filters; support combining specifications with `and()`, `or()`, and `not()`.
