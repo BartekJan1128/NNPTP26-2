@@ -5,7 +5,6 @@ import cz.upce.fei.nnptp.taskpulse.domain.Project;
 import cz.upce.fei.nnptp.taskpulse.domain.Task;
 import cz.upce.fei.nnptp.taskpulse.domain.TaskState;
 import cz.upce.fei.nnptp.taskpulse.domain.Worklog;
-import cz.upce.fei.nnptp.taskpulse.domain.exception.TaskPulseException;
 import cz.upce.fei.nnptp.taskpulse.service.ProjectService;
 import cz.upce.fei.nnptp.taskpulse.service.TaskQuery;
 import cz.upce.fei.nnptp.taskpulse.service.TaskService;
@@ -23,12 +22,14 @@ public class TaskPulseCli {
     private final TaskService taskService;
     private final PrintStream out;
     private final PrintStream err;
-
+    private final CliErrorHandler errorHandler;
+    
     public TaskPulseCli(ProjectService projectService, TaskService taskService, PrintStream out, PrintStream err) {
         this.projectService = Objects.requireNonNull(projectService, "ProjectService must not be null");
         this.taskService = Objects.requireNonNull(taskService, "TaskService must not be null");
         this.out = Objects.requireNonNull(out, "out must not be null");
         this.err = Objects.requireNonNull(err, "err must not be null");
+        this.errorHandler = new CliErrorHandler(this.err);
     }
 
     public TaskPulseCli(ProjectService projectService, TaskService taskService) {
@@ -73,12 +74,8 @@ public class TaskPulseCli {
                 case "worklog" -> handleWorklogCommand(tokens.subList(1, tokens.size()));
                 default -> err.println("Unknown command: '" + command + "'. Type 'help' for available commands.");
             }
-        } catch (TaskPulseException e) {
-            err.println("Error: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            err.println("Invalid argument: " + e.getMessage());
         } catch (Exception e) {
-            err.println("Unexpected error: " + e.getMessage());
+            errorHandler.handle(e);
         }
         return true;
     }
