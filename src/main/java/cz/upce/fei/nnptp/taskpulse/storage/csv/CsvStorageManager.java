@@ -131,11 +131,8 @@ public class CsvStorageManager {
                         : parseField("tasks.csv", "dueDate", i + 1, row.get(7), LocalDate::parse);
                 String rawLabels = row.get(8);
                 List<String> labels = new ArrayList<>();
-                if (!rawLabels.isBlank()) {
-                    labels = Arrays.stream(rawLabels.split(";"))
-                            .map(String::strip)
-                            .filter(s -> !s.isEmpty())
-                            .toList();
+                if (!rawLabels.isEmpty()) {
+                    labels = Arrays.asList(rawLabels.split(";", -1));
                 }
 
                 Task task = new TaskBuilder(projectId, title)

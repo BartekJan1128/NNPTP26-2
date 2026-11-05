@@ -10,6 +10,8 @@ import cz.upce.fei.nnptp.taskpulse.storage.InMemoryTaskRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.StorageException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -106,11 +108,46 @@ class CsvStorageManagerTest {
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining("missing project");
     }
+    
+    @ParameterizedTest
+    @ValueSource(strings = {";", ";;", " ; ", "backend;;frontend", "backend;", ";backend", "   "})
+    void rejectEmptyLabelEdgeCasesInCsv(String invalidLabels) throws IOException {
+        UUID projectId = UUID.randomUUID();
+        String projectCsv = "id,name,description\n" +
+                projectId + ",Project 1,Desc 1\n";
+        String taskCsv = "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                UUID.randomUUID() + "," + projectId + ",Title,Desc,MEDIUM,TODO,,," + invalidLabels + "\n";
+
+        Files.writeString(tempDir.resolve("projects.csv"), projectCsv);
+        Files.writeString(tempDir.resolve("tasks.csv"), taskCsv);
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("Label must not be blank");
+    }
+    
+    @Test
+    void loadTaskWithEmptyLabelsFieldSuccessfully() throws IOException {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        String projectCsv = "id,name,description\n" +
+                projectId + ",Project 1,Desc 1\n";
+        String taskCsv = "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                taskId + "," + projectId + ",Title,Desc,MEDIUM,TODO,,,\n";
+
+        Files.writeString(tempDir.resolve("projects.csv"), projectCsv);
+        Files.writeString(tempDir.resolve("tasks.csv"), taskCsv);
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        CsvStorageManager.LoadedWorkspace workspace = storage.load();
+
+        Task loadedTask = workspace.taskRepository().findById(taskId).orElseThrow();
+        assertThat(loadedTask.getLabels()).isEmpty();
+    }
 
     @Test
     void malformedDueDateReportsLineAndColumnAndToken() throws IOException {
-        // Regression: previously only a generic 'Failed to load tasks' message
-        // was produced, without line, column, or the invalid token.
         UUID projectId = UUID.randomUUID();
         Files.writeString(tempDir.resolve("projects.csv"),
                 "id,name,description\n" + projectId + ",Project,\n");
