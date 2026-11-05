@@ -16,6 +16,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -50,6 +51,27 @@ class TaskPulseCliTest {
         assertThat(continueRunning).isTrue();
         assertThat(outContent.toString()).contains("Available commands:", "project add", "task add", "worklog log",
                 "--exceeded [<minutes>]");
+    }
+
+    @Test
+    void enumArgumentsAreCaseInsensitiveAndLocaleIndependent() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            var project = projectService.createProject("Course", "");
+            Task task = taskService.createTask(project.getId(), "Review", "", Priority.HIGH, null, null);
+
+            cli.executeLine("task transition " + task.getId() + " in_progress");
+            assertThat(task.getState()).isEqualTo(TaskState.IN_PROGRESS);
+            assertThat(errContent.toString()).isEmpty();
+
+            outContent.reset();
+            cli.executeLine("task list --priority critical");
+            assertThat(outContent.toString()).contains("No tasks found.");
+            assertThat(errContent.toString()).isEmpty();
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 
     @Test
