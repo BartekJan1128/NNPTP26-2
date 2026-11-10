@@ -108,7 +108,63 @@ class CsvStorageManagerTest {
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining("missing project");
     }
-    
+
+    @Test
+    void rejectDuplicateTaskIdInCsv() throws IOException {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + projectId + ",Project,\n");
+        Files.writeString(tempDir.resolve("tasks.csv"),
+                "id,projectId,title,description,priority,state,estimatedMinutes,dueDate,labels\n" +
+                taskId + "," + projectId + ",First,,MEDIUM,TODO,,,\n" +
+                taskId + "," + projectId + ",Second,,MEDIUM,TODO,,,\n");
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("Duplicate task id");
+    }
+
+    @Test
+    void rejectWorklogReferencingMissingTask() throws IOException {
+        UUID missingTaskId = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("worklogs.csv"),
+                "taskId,timestamp,durationMinutes,author,description\n" +
+                missingTaskId + ",2026-10-21T14:30,30,Petr,\n");
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("missing task")
+                .hasMessageContaining(missingTaskId.toString());
+    }
+
+    @Test
+    void skipBlankLinesBetweenRows() throws IOException {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + first + ",First,\n\n" + second + ",Second,\n");
+
+        CsvStorageManager.LoadedWorkspace workspace = new CsvStorageManager(tempDir).load();
+
+        assertThat(workspace.projectRepository().findAll())
+                .extracting(Project::getId)
+                .containsExactlyInAnyOrder(first, second);
+    }
+
+    @Test
+    void rejectRowWithMissingColumns() throws IOException {
+        Files.writeString(tempDir.resolve("projects.csv"),
+                "id,name,description\n" + UUID.randomUUID() + ",Only name\n");
+
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        assertThatThrownBy(storage::load)
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("Malformed row in projects.csv at line 2");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {";", ";;", " ; ", "backend;;frontend", "backend;", ";backend", "   "})
     void rejectEmptyLabelEdgeCasesInCsv(String invalidLabels) throws IOException {
