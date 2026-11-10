@@ -139,6 +139,7 @@ final class TaskCliHandler implements CliCommandHandler {
                 taskService.deleteTask(id);
                 out.println("Task deleted: " + id);
             }
+            
             default -> err.println("Unknown task action: '" + action + "'");
         }
     }

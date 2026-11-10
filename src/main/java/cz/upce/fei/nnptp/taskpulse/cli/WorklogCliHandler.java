@@ -65,6 +65,7 @@ final class WorklogCliHandler implements CliCommandHandler {
                     }
                 }
             }
+            
             default -> err.println("Unknown worklog action: '" + action + "'");
         }
     }

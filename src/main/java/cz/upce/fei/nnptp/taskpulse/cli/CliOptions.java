@@ -21,8 +21,7 @@ final class CliOptions {
                 continue;
             }
             if (FLAGS.contains(name)) {
-                if (name.equals("--exceeded") && i + 1 < args.size()
-                        && !args.get(i + 1).startsWith("--")) {
+                if (name.equals("--exceeded") && i + 1 < args.size() && !args.get(i + 1).startsWith("--")) {
                     options.values.put(name, args.get(++i));
                 } else {
                     options.values.put(name, "");
@@ -34,7 +33,7 @@ final class CliOptions {
         return options;
     }
 
-    boolean has(String name) {
+    boolean has(String name) { 
         return values.containsKey(name);
     }
 

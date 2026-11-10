@@ -77,6 +77,7 @@ final class ProjectCliHandler implements CliCommandHandler {
                 projectService.deleteProject(id);
                 out.println("Project deleted: " + id);
             }
+            
             default -> err.println("Unknown project action: '" + action + "'");
         }
     }
