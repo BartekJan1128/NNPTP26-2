@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 final class TaskCliHandler implements CliCommandHandler {
@@ -172,7 +173,7 @@ final class TaskCliHandler implements CliCommandHandler {
 
     private TaskState parseState(String val) {
         try {
-            return TaskState.valueOf(val.strip().toUpperCase());
+            return TaskState.valueOf(val.strip().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid task state: '" + val + "'. Allowed: " + Arrays.toString(TaskState.values()));
         }
@@ -180,7 +181,7 @@ final class TaskCliHandler implements CliCommandHandler {
 
     private Priority parsePriority(String val) {
         try {
-            return Priority.valueOf(val.strip().toUpperCase());
+            return Priority.valueOf(val.strip().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid priority: '" + val + "'. Allowed: " + Arrays.toString(Priority.values()));
         }
