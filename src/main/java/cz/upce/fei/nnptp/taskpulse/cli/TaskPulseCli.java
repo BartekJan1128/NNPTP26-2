@@ -59,7 +59,10 @@ public class TaskPulseCli {
             return true;
         }
 
-        List<String> tokens = CommandTokenizer.tokenize(line);
+        return executeTokens(CommandTokenizer.tokenize(line));
+    }
+
+    public boolean executeTokens(List<String> tokens) {
         if (tokens.isEmpty()) {
             return true;
         }
