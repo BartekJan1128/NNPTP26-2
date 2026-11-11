@@ -12,8 +12,11 @@ import cz.upce.fei.nnptp.taskpulse.service.TaskSortOrder;
 
 import java.io.PrintStream;
 import java.time.Clock;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.UUID;
@@ -65,7 +68,10 @@ public class TaskPulseCli {
             return true;
         }
 
-        List<String> tokens = CommandTokenizer.tokenize(line);
+        return executeTokens(CommandTokenizer.tokenize(line));
+    }
+
+    public boolean executeTokens(List<String> tokens) {
         if (tokens.isEmpty()) {
             return true;
         }
@@ -99,7 +105,8 @@ public class TaskPulseCli {
         out.println("  project delete <project-id>");
         out.println("  task add <project-id> <title> [description]");
         out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>]"
-                + " [--search <text>] [--overdue] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]");
+                + " [--search <text>] [--overdue] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]"
+                + " [--from <YYYY-MM-DD>] [--to <YYYY-MM-DD>]");
         out.println("  task show <task-id>");
         out.println("  task transition <task-id> <state>");
         out.println("  task label add <task-id> <label>");
@@ -196,6 +203,8 @@ public class TaskPulseCli {
             }
             case "list" -> {
                 TaskQuery.Builder qb = TaskQuery.builder();
+                LocalDate fromDate = null;
+                LocalDate toDate = null;
                 for (int i = 1; i < args.size(); i++) {
                     String flag = args.get(i);
                     if ("--project".equalsIgnoreCase(flag) && i + 1 < args.size()) {
@@ -218,8 +227,13 @@ public class TaskPulseCli {
                         qb.varianceThresholdMinutes(threshold);
                     } else if ("--sort".equalsIgnoreCase(flag) && i + 1 < args.size()) {
                         qb.sortOrder(parseSortOrder(args.get(++i)));
+                    } else if ("--from".equalsIgnoreCase(flag) && i + 1 < args.size()) {
+                        fromDate = parseDate(args.get(++i));
+                    } else if ("--to".equalsIgnoreCase(flag) && i + 1 < args.size()) {
+                        toDate = parseDate(args.get(++i));
                     }
                 }
+                qb.dueDateRange(fromDate, toDate);
                 TaskQuery query = qb.build();
                 List<Task> tasks = taskService.findTasks(query);
                 if (tasks.isEmpty()) {
@@ -357,6 +371,14 @@ public class TaskPulseCli {
         }
     }
 
+    private LocalDate parseDate(String val) {
+        try {
+            return LocalDate.parse(val.strip());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date: '" + val + "'. Expected format: YYYY-MM-DD");
+        }
+    }
+
     private UUID parseUuid(String val) {
         try {
             return UUID.fromString(val.strip());
@@ -367,7 +389,7 @@ public class TaskPulseCli {
 
     private TaskState parseState(String val) {
         try {
-            return TaskState.valueOf(val.strip().toUpperCase());
+            return TaskState.valueOf(val.strip().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid task state: '" + val + "'. Allowed: " + Arrays.toString(TaskState.values()));
         }
@@ -375,7 +397,7 @@ public class TaskPulseCli {
 
     private Priority parsePriority(String val) {
         try {
-            return Priority.valueOf(val.strip().toUpperCase());
+            return Priority.valueOf(val.strip().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid priority: '" + val + "'. Allowed: " + Arrays.toString(Priority.values()));
         }

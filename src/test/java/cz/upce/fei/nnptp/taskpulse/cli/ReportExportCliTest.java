@@ -68,7 +68,7 @@ class ReportExportCliTest {
         Project other = projects.createProject("Other", "");
         Task excluded = tasks.createTask(other.getId(), "Excluded", "", Priority.HIGH, null, TODAY.minusDays(1));
 
-        assertThat(cli.executeLine(command())).isTrue();
+        assertThat(cli.executeLine(commandMarkdown())).isTrue();
 
         assertThat(stdout()).contains(
                         "# Project Summary: Cesky projekt",
@@ -89,17 +89,34 @@ class ReportExportCliTest {
     }
 
     @Test
-    void exportsEmptyProject() {
-        cli.executeLine(command());
+    void exportsEmptyProjectAsMarkdown() {
+        cli.executeLine(commandMarkdown());
         assertThat(stdout()).contains("| TODO | 0 |", "| DONE | 0 |", "| Overdue | 0 |",
                 "| Total recorded minutes | 0 |");
         assertThat(stderr()).isEmpty();
     }
 
     @Test
-    void writesUtf8ToQuotedPathAndAcceptsOptionsInEitherOrder() throws Exception {
+    void exportsJsonToConsoleUsingMergedJsonExporter() {
+        Task task = tasks.createTask(project.getId(), "Json task", "", Priority.LOW, null, TODAY);
+
+        cli.executeLine(commandJson());
+
+        assertThat(stdout()).contains(
+                "\"name\": \"Cesky projekt\"",
+                "\"description\": \"Prehled prace\"",
+                "\"overdueCount\": 0",
+                "\"totalRecordedMinutes\": 0",
+                "\"title\": \"Json task\"",
+                "\"estimatedMinutes\": null",
+                task.getId().toString());
+        assertThat(stderr()).isEmpty();
+    }
+
+    @Test
+    void writesUtf8MarkdownToQuotedPathAndAcceptsOptionsInEitherOrder() throws Exception {
         Path file = directory.resolve("prehled-projektu.md");
-        cli.executeLine(command());
+        cli.executeLine(commandMarkdown());
         String expected = stdout();
         output.reset();
 
@@ -111,11 +128,22 @@ class ReportExportCliTest {
     }
 
     @Test
+    void writesJsonReportToFile() throws Exception {
+        Path file = directory.resolve("report.json");
+        cli.executeLine(commandJson() + " --output \"" + file + "\"");
+
+        String content = Files.readString(file, StandardCharsets.UTF_8);
+        assertThat(content).contains("\"name\": \"Cesky projekt\"", "\"tasks\": []");
+        assertThat(stdout()).contains("Report exported to: " + file);
+        assertThat(stderr()).isEmpty();
+    }
+
+    @Test
     void neverOverwritesExistingFile() throws Exception {
         Path file = directory.resolve("existing.md");
         Files.writeString(file, "Keep this content");
 
-        cli.executeLine(command() + " --output \"" + file + "\"");
+        cli.executeLine(commandMarkdown() + " --output \"" + file + "\"");
 
         assertThat(Files.readString(file)).isEqualTo("Keep this content");
         assertThat(stdout()).isEmpty();
@@ -125,7 +153,7 @@ class ReportExportCliTest {
     @Test
     void reportsMissingOutputDirectoryWithoutSuccessMessage() {
         Path file = directory.resolve("missing/report.md");
-        cli.executeLine(command() + " --output \"" + file + "\"");
+        cli.executeLine(commandMarkdown() + " --output \"" + file + "\"");
         assertThat(file).doesNotExist();
         assertThat(stdout()).isEmpty();
         assertThat(stderr()).contains("Cannot write report").doesNotContain("Unexpected error");
@@ -133,7 +161,7 @@ class ReportExportCliTest {
 
     @Test
     void rejectsDirectoryAsOutput() {
-        cli.executeLine(command() + " --output \"" + directory + "\"");
+        cli.executeLine(commandMarkdown() + " --output \"" + directory + "\"");
         assertThat(directory).isDirectory();
         assertThat(stdout()).isEmpty();
         assertThat(stderr()).contains("Error:");
@@ -144,7 +172,7 @@ class ReportExportCliTest {
             "",
             "--format",
             "--format --output report.md",
-            "--format json",
+            "--format yaml",
             "--format markdown --output",
             "--format markdown --unknown value",
             "--format markdown --format markdown",
@@ -167,7 +195,7 @@ class ReportExportCliTest {
     void explainsCommandUsage(String command) {
         cli.executeLine(command);
         assertThat(stdout()).isEmpty();
-        assertThat(stderr()).contains("Usage: report export <project-id> --format markdown");
+        assertThat(stderr()).contains("Usage: report export <project-id> --format <markdown|json>");
     }
 
     @Test
@@ -190,12 +218,16 @@ class ReportExportCliTest {
     void helpDocumentsFormatOutputAndOverwriteBehavior() {
         cli.executeLine("help");
         assertThat(stdout()).contains(
-                "report export <project-id> --format markdown [--output <file-path>]",
+                "report export <project-id> --format <markdown|json> [--output <file-path>]",
                 "Existing files are never overwritten");
     }
 
-    private String command() {
+    private String commandMarkdown() {
         return "report export " + project.getId() + " --format markdown";
+    }
+
+    private String commandJson() {
+        return "report export " + project.getId() + " --format json";
     }
 
     private String stdout() {

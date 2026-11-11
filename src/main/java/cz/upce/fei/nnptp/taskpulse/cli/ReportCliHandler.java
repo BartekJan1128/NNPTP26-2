@@ -2,6 +2,7 @@ package cz.upce.fei.nnptp.taskpulse.cli;
 
 import cz.upce.fei.nnptp.taskpulse.domain.Project;
 import cz.upce.fei.nnptp.taskpulse.domain.Task;
+import cz.upce.fei.nnptp.taskpulse.report.JsonReportExporter;
 import cz.upce.fei.nnptp.taskpulse.report.MarkdownReportExporter;
 import cz.upce.fei.nnptp.taskpulse.report.ReportExporter;
 import cz.upce.fei.nnptp.taskpulse.service.ProjectService;
@@ -18,11 +19,12 @@ import java.nio.file.StandardOpenOption;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
 final class ReportCliHandler {
-    static final String USAGE = "report export <project-id> --format markdown [--output <file-path>]";
+    static final String USAGE = "report export <project-id> --format <markdown|json> [--output <file-path>]";
 
     private final ProjectService projectService;
     private final TaskService taskService;
@@ -73,13 +75,10 @@ final class ReportCliHandler {
         if (format == null) {
             throw new IllegalArgumentException("Missing --format. Usage: " + USAGE);
         }
-        if (!"markdown".equalsIgnoreCase(format)) {
-            throw new IllegalArgumentException("Unsupported report format: " + format + ". Supported: markdown");
-        }
 
+        ReportExporter exporter = resolveExporter(format);
         Project project = projectService.getProject(projectId);
         List<Task> tasks = taskService.findTasks(TaskQuery.builder().projectId(projectId).build());
-        ReportExporter exporter = new MarkdownReportExporter();
         String report = exporter.export(project, tasks, LocalDate.now(clock));
 
         if (output == null) {
@@ -96,6 +95,15 @@ final class ReportCliHandler {
         } catch (IOException e) {
             err.println("Error: Cannot write report to " + output + ": " + e.getMessage());
         }
+    }
+
+    private static ReportExporter resolveExporter(String format) {
+        return switch (format.strip().toLowerCase(Locale.ROOT)) {
+            case "markdown" -> new MarkdownReportExporter();
+            case "json" -> new JsonReportExporter();
+            default -> throw new IllegalArgumentException(
+                    "Unsupported report format: " + format + ". Supported: markdown, json");
+        };
     }
 
     private static UUID parseUuid(String value) {
