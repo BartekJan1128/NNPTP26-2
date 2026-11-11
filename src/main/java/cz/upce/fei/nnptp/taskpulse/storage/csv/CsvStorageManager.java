@@ -80,10 +80,10 @@ public class CsvStorageManager {
     public void save(ProjectRepository projectRepository, TaskRepository taskRepository) {
         List<Project> projects = projectRepository.findAll();
         List<Task> tasks = taskRepository.findAll();
-        List<WorklogCsvMapper.TaskWorklog> worklogs = tasks.stream()
+        Iterable<WorklogCsvMapper.TaskWorklog> worklogs = () -> tasks.stream()
                 .flatMap(task -> task.getWorklogs().stream()
                         .map(worklog -> new WorklogCsvMapper.TaskWorklog(task.getId(), worklog)))
-                .toList();
+                .iterator();
 
         try {
             Files.createDirectories(dataDirectory);
@@ -115,7 +115,7 @@ public class CsvStorageManager {
         }
     }
 
-    private <T> void writeAll(CsvEntityMapper<T> mapper, List<T> values) throws IOException {
+    private <T> void writeAll(CsvEntityMapper<T> mapper, Iterable<T> values) throws IOException {
         Path path = dataDirectory.resolve(mapper.fileName());
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writeLine(writer, mapper.columns());
