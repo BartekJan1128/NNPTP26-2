@@ -7,6 +7,8 @@ import cz.upce.fei.nnptp.taskpulse.service.TaskQuery;
 import cz.upce.fei.nnptp.taskpulse.service.TaskService;
 import cz.upce.fei.nnptp.taskpulse.service.TaskSortOrder;
 import java.io.PrintStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -45,6 +47,8 @@ final class TaskCliHandler implements CliCommandHandler {
             case "list" -> {
                 CliOptions options = CliOptions.parse(args, 1);
                 TaskQuery.Builder qb = TaskQuery.builder();
+                LocalDate fromDate = null;
+                LocalDate toDate = null;
                 if (options.has("--project")) {
                     qb.projectId(TaskPulseCli.parseUuid(options.get("--project")));
                 }
@@ -70,6 +74,13 @@ final class TaskCliHandler implements CliCommandHandler {
                 if (options.has("--sort")) {
                     qb.sortOrder(parseSortOrder(options.get("--sort")));
                 }
+                if (options.has("--from")) {
+                    fromDate = parseDate(options.get("--from"));
+                }
+                if (options.has("--to")) {
+                    toDate = parseDate(options.get("--to"));
+                }
+                qb.dueDateRange(fromDate, toDate);
                 TaskQuery query = qb.build();
                 List<Task> tasks = taskService.findTasks(query);
                 if (tasks.isEmpty()) {
@@ -151,6 +162,14 @@ final class TaskCliHandler implements CliCommandHandler {
             throw new IllegalArgumentException("--exceeded expects a whole number of minutes, got '" + value + "'");
         }
     }
+    private LocalDate parseDate(String val) {
+        try {
+            return LocalDate.parse(val.strip());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date: '" + val + "'. Expected format: YYYY-MM-DD");
+        }
+    }
+
     private TaskState parseState(String val) {
         try {
             return TaskState.valueOf(val.strip().toUpperCase());
