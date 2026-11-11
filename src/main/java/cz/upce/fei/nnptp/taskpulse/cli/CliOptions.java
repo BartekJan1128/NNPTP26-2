@@ -6,9 +6,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-
 final class CliOptions {
     private static final Set<String> FLAGS = Set.of("--overdue", "--exceeded");
+    private static final Set<String> VALUE_OPTIONS = Set.of(
+            "--project", "--state", "--priority", "--label",
+            "--search", "--sort", "--from", "--to",
+            "--author", "--desc"
+    );
+
     private final Map<String, String> values = new HashMap<>();
 
     private CliOptions() { }
@@ -20,20 +25,22 @@ final class CliOptions {
             if (!name.startsWith("--")) {
                 continue;
             }
+
             if (FLAGS.contains(name)) {
-                if (name.equals("--exceeded") && i + 1 < args.size() && !args.get(i + 1).startsWith("--")) {
+                if (name.equals("--exceeded") && i + 1 < args.size()
+                        && !args.get(i + 1).startsWith("--")) {
                     options.values.put(name, args.get(++i));
                 } else {
                     options.values.put(name, "");
                 }
-            } else if (i + 1 < args.size() && !args.get(i + 1).startsWith("--")) {
+            } else if (VALUE_OPTIONS.contains(name) && i + 1 < args.size()) {
                 options.values.put(name, args.get(++i));
             }
         }
         return options;
     }
 
-    boolean has(String name) { 
+    boolean has(String name) {
         return values.containsKey(name);
     }
 
@@ -44,4 +51,4 @@ final class CliOptions {
     String getOrDefault(String name, String defaultValue) {
         return values.getOrDefault(name, defaultValue);
     }
-}
+} 
