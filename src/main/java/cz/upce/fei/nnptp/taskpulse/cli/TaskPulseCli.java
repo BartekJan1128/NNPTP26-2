@@ -11,6 +11,8 @@ import cz.upce.fei.nnptp.taskpulse.service.TaskService;
 import cz.upce.fei.nnptp.taskpulse.service.TaskSortOrder;
 
 import java.io.PrintStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -90,7 +92,8 @@ public class TaskPulseCli {
         out.println("  project delete <project-id>");
         out.println("  task add <project-id> <title> [description]");
         out.println("  task list [--project <id>] [--state <state>] [--priority <priority>] [--label <label>]"
-                + " [--search <text>] [--overdue] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]");
+                + " [--search <text>] [--overdue] [--exceeded [<minutes>]] [--sort <title|priority|duedate|priority-duedate>]"
+                + " [--from <YYYY-MM-DD>] [--to <YYYY-MM-DD>]");
         out.println("  task show <task-id>");
         out.println("  task transition <task-id> <state>");
         out.println("  task label add <task-id> <label>");
@@ -185,6 +188,8 @@ public class TaskPulseCli {
             }
             case "list" -> {
                 TaskQuery.Builder qb = TaskQuery.builder();
+                LocalDate fromDate = null;
+                LocalDate toDate = null;
                 for (int i = 1; i < args.size(); i++) {
                     String flag = args.get(i);
                     if ("--project".equalsIgnoreCase(flag) && i + 1 < args.size()) {
@@ -207,8 +212,13 @@ public class TaskPulseCli {
                         qb.varianceThresholdMinutes(threshold);
                     } else if ("--sort".equalsIgnoreCase(flag) && i + 1 < args.size()) {
                         qb.sortOrder(parseSortOrder(args.get(++i)));
+                    } else if ("--from".equalsIgnoreCase(flag) && i + 1 < args.size()) {
+                        fromDate = parseDate(args.get(++i));
+                    } else if ("--to".equalsIgnoreCase(flag) && i + 1 < args.size()) {
+                        toDate = parseDate(args.get(++i));
                     }
                 }
+                qb.dueDateRange(fromDate, toDate);
                 TaskQuery query = qb.build();
                 List<Task> tasks = taskService.findTasks(query);
                 if (tasks.isEmpty()) {
@@ -343,6 +353,14 @@ public class TaskPulseCli {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("--exceeded expects a whole number of minutes, got '" + value + "'");
+        }
+    }
+
+    private LocalDate parseDate(String val) {
+        try {
+            return LocalDate.parse(val.strip());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date: '" + val + "'. Expected format: YYYY-MM-DD");
         }
     }
 
