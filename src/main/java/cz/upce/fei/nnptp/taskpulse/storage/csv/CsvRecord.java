@@ -22,7 +22,11 @@ final class CsvRecord {
         this.columns = List.copyOf(columns);
         this.values = List.copyOf(values);
         this.lineNumber = lineNumber;
-        if (values.size() < columns.size()) {
+        if (this.values.stream().allMatch(String::isBlank)) {
+            throw new StorageException("Empty record in " + fileName + " at line " + lineNumber
+                    + ": the row contains only delimiters and no values; remove the line or fill in its fields");
+        }
+        if (this.values.size() < this.columns.size()) {
             throw new StorageException("Malformed row in " + fileName + " at line " + lineNumber);
         }
     }

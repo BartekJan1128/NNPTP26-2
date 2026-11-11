@@ -13,6 +13,14 @@ class CsvRecordTest {
     private static final List<String> COLUMNS = List.of("name", "count");
 
     @Test
+    void rejectsDelimiterOnlyRow() {
+        assertThatThrownBy(() -> new CsvRecord("items.csv", COLUMNS, List.of("", " "), 3))
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("Empty record in items.csv at line 3")
+                .hasMessageContaining("only delimiters");
+    }
+
+    @Test
     void rejectsRowWithMissingColumns() {
         assertThatThrownBy(() -> new CsvRecord("items.csv", COLUMNS, List.of("only-name"), 3))
                 .isInstanceOf(StorageException.class)
