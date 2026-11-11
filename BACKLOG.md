@@ -32,5 +32,5 @@ This is the single progress-tracking list for proposed fixes, refactoring, featu
 ## Tests
 
 - [x] **TEST-001 — Verify CSV escaping and round trips**: Add property-based or randomized tests for CSV escaping and round-trip preservation.
-- [ ] **TEST-002 — Cover end-to-end CLI workflows**: Add integration tests that exercise the CLI through stdin/stdout piping.
+- [x] **TEST-002 — Cover end-to-end CLI workflows**: Add integration tests that exercise the CLI through stdin/stdout piping.
 - [ ] **TEST-003 — Cover date and time edge cases**: Increase branch coverage for date-range queries and time parsing.
