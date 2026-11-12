@@ -4,9 +4,10 @@ import cz.upce.fei.nnptp.taskpulse.service.ProjectService;
 import cz.upce.fei.nnptp.taskpulse.service.TaskService;
 
 import java.io.PrintStream;
+import java.time.Clock;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.UUID;
@@ -16,16 +17,23 @@ public class TaskPulseCli {
     private final PrintStream out;
     private final PrintStream err;
     private final CliErrorHandler errorHandler;
-    
+
     public TaskPulseCli(ProjectService projectService, TaskService taskService, PrintStream out, PrintStream err) {
+        this(projectService, taskService, out, err, Clock.systemDefaultZone());
+    }
+
+    public TaskPulseCli(ProjectService projectService, TaskService taskService, PrintStream out, PrintStream err,
+                        Clock clock) {
         Objects.requireNonNull(projectService, "ProjectService must not be null");
         Objects.requireNonNull(taskService, "TaskService must not be null");
+        Objects.requireNonNull(clock, "Clock must not be null");
         this.out = Objects.requireNonNull(out, "out must not be null");
         this.err = Objects.requireNonNull(err, "err must not be null");
         this.errorHandler = new CliErrorHandler(this.err);
         handlers.put("project", new ProjectCliHandler(projectService, out, err));
         handlers.put("task", new TaskCliHandler(taskService, out, err));
         handlers.put("worklog", new WorklogCliHandler(taskService, out, err));
+        handlers.put("report", new ReportCliHandler(projectService, taskService, out, err, clock));
     }
 
     public TaskPulseCli(ProjectService projectService, TaskService taskService) {
@@ -76,7 +84,6 @@ public class TaskPulseCli {
                         handler.handle(tokens.subList(1, tokens.size()));
                     }
                 }
-                
             }
         } catch (Exception e) {
             errorHandler.handle(e);
@@ -102,6 +109,8 @@ public class TaskPulseCli {
         out.println("  task delete <task-id>");
         out.println("  worklog log <task-id> <durationMinutes> --author <author> [--desc <description>]");
         out.println("  worklog list <task-id>");
+        out.println("  " + ReportCliHandler.USAGE);
+        out.println("    Without --output, prints to the console. Existing files are never overwritten.");
         out.println("  exit / quit");
     }
 
