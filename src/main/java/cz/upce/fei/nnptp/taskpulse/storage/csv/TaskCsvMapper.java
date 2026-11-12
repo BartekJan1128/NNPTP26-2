@@ -1,5 +1,6 @@
 package cz.upce.fei.nnptp.taskpulse.storage.csv;
 
+import cz.upce.fei.nnptp.taskpulse.domain.Label;
 import cz.upce.fei.nnptp.taskpulse.domain.Priority;
 import cz.upce.fei.nnptp.taskpulse.domain.Task;
 import cz.upce.fei.nnptp.taskpulse.domain.TaskBuilder;
@@ -23,7 +24,6 @@ final class TaskCsvMapper implements CsvEntityMapper<Task> {
     private static final String LABELS = "labels";
     private static final List<String> COLUMNS = List.of(
             ID, PROJECT_ID, TITLE, DESCRIPTION, PRIORITY, STATE, ESTIMATED_MINUTES, DUE_DATE, LABELS);
-    private static final String LABEL_SEPARATOR = ";";
 
     @Override
     public String fileName() {
@@ -59,10 +59,10 @@ final class TaskCsvMapper implements CsvEntityMapper<Task> {
                 task.getState().name(),
                 Objects.toString(task.getEstimatedMinutes(), ""),
                 Objects.toString(task.getDueDate(), ""),
-                String.join(LABEL_SEPARATOR, task.getLabels()));
+                String.join(Label.SEPARATOR, task.getLabels()));
     }
 
     private static List<String> parseLabels(String rawLabels) {
-        return rawLabels.isEmpty() ? List.of() : Arrays.asList(rawLabels.split(LABEL_SEPARATOR, -1));
+        return rawLabels.isEmpty() ? List.of() : Arrays.asList(rawLabels.split(Label.SEPARATOR, -1));
     }
 }
