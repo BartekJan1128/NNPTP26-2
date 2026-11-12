@@ -8,17 +8,17 @@ This is the single progress-tracking list for proposed fixes, refactoring, featu
 - [ ] **BUG-002 — Validate task updates**: Reject negative estimates and blank titles consistently on every task update path.
 - [x] **BUG-003 — Report trailing empty CSV lines clearly**: Handle files ending in empty lines and provide an actionable parsing error when appropriate.
 - [ ] **BUG-004 — Validate project references on project updates**: If a project update endpoint or method is introduced, prevent tasks from referencing nonexistent project IDs.
-- [X] **BUG-005 — Support escaped characters in quoted CLI arguments**: Teach `CommandTokenizer` to handle `\n`, `\t`, and `\\` inside quoted strings.
+- [x] **BUG-005 — Support escaped characters in quoted CLI arguments**: Teach `CommandTokenizer` to handle `\n`, `\t`, and `\\` inside quoted strings.
 - [x] **BUG-006 — Parse CLI enum values case-insensitively**: Normalize user-supplied enum values before validation.
 
 ## Refactoring and design
 
-- [ ] **REFACTOR-001 — Decompose CLI command handling**: Replace the monolithic `TaskPulseCli` switch with dedicated command handlers (such as `ProjectCliHandler`, `TaskCliHandler`, and `WorklogCliHandler`), a command registry, and reusable parsing for options such as `--project`, `--state`, and `--priority`.
+- [x] **REFACTOR-001 — Decompose CLI command handling**: Replace the monolithic `TaskPulseCli` switch with dedicated command handlers (such as `ProjectCliHandler`, `TaskCliHandler`, and `WorklogCliHandler`), a command registry, and reusable parsing for options such as `--project`, `--state`, and `--priority`.
 - [x] **REFACTOR-002 — Encapsulate task state transitions**: Move transition permissions and state-specific constraints from enum switches into discrete transition handlers or state implementations.
 - [ ] **REFACTOR-003 — Encapsulate task construction**: Introduce a `TaskBuilder` to simplify task creation for tests and persistence.
 - [x] **REFACTOR-004 — Extract CSV entity mappers**: Move row-to-entity parsing and entity-to-row serialization from `CsvStorageManager` into `ProjectCsvMapper`, `TaskCsvMapper`, and `WorklogCsvMapper`; keep storage responsible for file I/O, transactional consistency, and relationship validation.
 - [x] **REFACTOR-005 — Isolate query filtering**: Extract `TaskService.matchesQuery(...)` into a query evaluator with composable specifications, including project, state, overdue, and text-search filters; support combining specifications with `and()`, `or()`, and `not()`.
-- [X] **REFACTOR-006 — Centralize CLI error formatting**: Unify user-facing error presentation in a dedicated handler rather than separate catch blocks in `executeLine`.
+- [x] **REFACTOR-006 — Centralize CLI error formatting**: Unify user-facing error presentation in a dedicated handler rather than separate catch blocks in `executeLine`.
 - [ ] **REFACTOR-007 — Add a workspace unit of work**: Track modified entities and commit writes to all workspace CSV files atomically, rolling back on failure.
 
 ## Features
