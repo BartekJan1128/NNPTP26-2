@@ -95,6 +95,36 @@ class TaskPulseCliTest {
     }
 
     @Test
+    void projectEditWithoutDescriptionKeepsExistingDescription() {
+        UUID projectId = projectService.createProject("Course", "Semester project").getId();
+
+        cli.executeLine("project edit " + projectId + " \"Renamed course\"");
+
+        var project = projectService.getProject(projectId);
+        assertThat(project.getName()).isEqualTo("Renamed course");
+        assertThat(project.getDescription()).isEqualTo("Semester project");
+        assertThat(outContent.toString()).contains("Project updated:", "Renamed course");
+    }
+
+    @Test
+    void projectEditWithDescriptionReplacesIt() {
+        UUID projectId = projectService.createProject("Course", "Semester project").getId();
+
+        cli.executeLine("project edit " + projectId + " Course \"Final exam\"");
+
+        assertThat(projectService.getProject(projectId).getDescription()).isEqualTo("Final exam");
+    }
+
+    @Test
+    void projectEditWithEmptyDescriptionClearsIt() {
+        UUID projectId = projectService.createProject("Course", "Semester project").getId();
+
+        cli.executeLine("project edit " + projectId + " Course \"\"");
+
+        assertThat(projectService.getProject(projectId).getDescription()).isEmpty();
+    }
+
+    @Test
     void taskAndWorklogLifecycleViaCli() {
         var project = projectService.createProject("Course", "Desc");
         String projectId = project.getId().toString();

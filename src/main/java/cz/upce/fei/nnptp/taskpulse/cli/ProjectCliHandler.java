@@ -64,7 +64,7 @@ final class ProjectCliHandler implements CliCommandHandler {
                 }
                 UUID id = TaskPulseCli.parseUuid(args.get(1));
                 String name = args.get(2);
-                String desc = args.size() > 3 ? args.get(3) : "";
+                String desc = args.size() > 3 ? args.get(3) : projectService.getProject(id).getDescription();
                 Project p = projectService.updateProject(id, name, desc);
                 out.println("Project updated: " + p.getId() + " - " + p.getName());
             }
