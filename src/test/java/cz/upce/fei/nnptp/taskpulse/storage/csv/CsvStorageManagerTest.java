@@ -1,10 +1,12 @@
 package cz.upce.fei.nnptp.taskpulse.storage.csv;
 
+import cz.upce.fei.nnptp.taskpulse.domain.Label;
 import cz.upce.fei.nnptp.taskpulse.domain.Priority;
 import cz.upce.fei.nnptp.taskpulse.domain.Project;
 import cz.upce.fei.nnptp.taskpulse.domain.Task;
 import cz.upce.fei.nnptp.taskpulse.domain.TaskState;
 import cz.upce.fei.nnptp.taskpulse.domain.Worklog;
+import cz.upce.fei.nnptp.taskpulse.domain.exception.ValidationException;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryProjectRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.InMemoryTaskRepository;
 import cz.upce.fei.nnptp.taskpulse.storage.StorageException;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CsvStorageManagerTest {
@@ -200,6 +203,28 @@ class CsvStorageManagerTest {
 
         Task loadedTask = workspace.taskRepository().findById(taskId).orElseThrow();
         assertThat(loadedTask.getLabels()).isEmpty();
+    }
+
+    @Test
+    void labelContainingSeparatorNeverReachesWorkspaceFile() {
+        CsvStorageManager storage = new CsvStorageManager(tempDir);
+        InMemoryProjectRepository projectRepo = new InMemoryProjectRepository();
+        InMemoryTaskRepository taskRepo = new InMemoryTaskRepository();
+
+        Project project = new Project("Projekt", "Popis");
+        projectRepo.save(project);
+        Task task = new Task(project.getId(), "Úkol");
+        task.addLabel("urgent");
+        taskRepo.save(task);
+
+        assertThatThrownBy(() -> task.addLabel("release" + Label.SEPARATOR))
+                .isInstanceOf(ValidationException.class);
+
+        storage.save(projectRepo, taskRepo);
+
+        assertThatCode(storage::load).doesNotThrowAnyException();
+        Task reloaded = storage.load().taskRepository().findById(task.getId()).orElseThrow();
+        assertThat(reloaded.getLabels()).containsExactly("urgent");
     }
 
     @Test
