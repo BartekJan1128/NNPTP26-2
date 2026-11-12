@@ -5,7 +5,7 @@ This is the single progress-tracking list for proposed fixes, refactoring, featu
 ## Bug fixes
 
 - [ ] **BUG-001 — Handle empty label lists in CSV**: Correctly deserialize records with an empty label list.
-- [ ] **BUG-002 — Validate task updates**: Reject negative estimates and blank titles consistently on every task update path.
+- [x] **BUG-002 — Validate task updates**: Reject negative estimates and blank titles consistently on every task update path.
 - [x] **BUG-003 — Report trailing empty CSV lines clearly**: Handle files ending in empty lines and provide an actionable parsing error when appropriate.
 - [ ] **BUG-004 — Validate project references on project updates**: If a project update endpoint or method is introduced, prevent tasks from referencing nonexistent project IDs.
 - [x] **BUG-005 — Support escaped characters in quoted CLI arguments**: Teach `CommandTokenizer` to handle `\n`, `\t`, and `\\` inside quoted strings.
