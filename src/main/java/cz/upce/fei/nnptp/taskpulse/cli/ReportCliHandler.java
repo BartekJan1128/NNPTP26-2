@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
-final class ReportCliHandler {
+final class ReportCliHandler implements CliCommandHandler {
     static final String USAGE = "report export <project-id> --format <markdown|json> [--output <file-path>]";
 
     private final ProjectService projectService;
@@ -41,12 +41,13 @@ final class ReportCliHandler {
         this.clock = Objects.requireNonNull(clock, "Clock must not be null");
     }
 
-    void execute(List<String> args) {
+    @Override
+    public void handle(List<String> args) {
         if (args.size() < 2 || !"export".equalsIgnoreCase(args.get(0))) {
             throw new IllegalArgumentException("Usage: " + USAGE);
         }
 
-        UUID projectId = parseUuid(args.get(1));
+        UUID projectId = TaskPulseCli.parseUuid(args.get(1));
         String format = null;
         Path output = null;
 
@@ -104,13 +105,5 @@ final class ReportCliHandler {
             default -> throw new IllegalArgumentException(
                     "Unsupported report format: " + format + ". Supported: markdown, json");
         };
-    }
-
-    private static UUID parseUuid(String value) {
-        try {
-            return UUID.fromString(value.strip());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid UUID format: '" + value + "'");
-        }
     }
 }
